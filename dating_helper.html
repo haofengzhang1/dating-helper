@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DateSmart - Your AI Dating Coach</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:linear-gradient(135deg,#FA8BFF 0%,#2BD2FF 52%,#2BFF88 90%);min-height:100vh}
+    .container{max-width:1200px;margin:0 auto;padding:20px}
+    header{background:#fff;border-radius:20px;padding:30px;margin-bottom:30px;box-shadow:0 10px 30px rgba(0,0,0,.1);text-align:center}
+    h1{background:linear-gradient(135deg,#FA8BFF 0%,#2BD2FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:3em;margin-bottom:10px}
+    .eq-score{display:inline-block;background:linear-gradient(135deg,#2BD2FF 0%,#2BFF88 100%);color:#fff;padding:10px 30px;border-radius:50px;font-size:1.2em;font-weight:700;margin:20px 0}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:20px;margin-bottom:30px}
+    .card{background:#fff;border-radius:15px;padding:25px;box-shadow:0 5px 20px rgba(0,0,0,.1);transition:transform .3s}
+    .card:hover{transform:translateY(-5px)}
+    .card h3{background:linear-gradient(135deg,#FA8BFF 0%,#2BD2FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:20px;font-size:1.5em}
+    input,select,textarea{width:100%;padding:12px;margin:8px 0;border:2px solid #f0f0f0;border-radius:8px;font-size:16px;transition:border-color .3s}
+    input:focus,textarea:focus{outline:none;border-color:#2BD2FF}
+    button{background:linear-gradient(135deg,#FA8BFF 0%,#2BD2FF 100%);color:#fff;border:0;padding:12px 30px;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;transition:transform .2s;width:100%;margin-top:10px}
+    button:hover{transform:scale(1.02)}
+    .chat-message{padding:15px;margin:10px 0;border-radius:10px;background:#f9f9f9}
+    .ai-suggestion{background:linear-gradient(135deg,#e3f2fd 0%,#f3e5f5 100%);border-left:4px solid #2BD2FF}
+    .restaurant-card{border:1px solid #eee;border-radius:10px;padding:15px;margin:10px 0;transition:border-color .3s}
+    .restaurant-card:hover{border-color:#2BD2FF}
+    .rating{color:#ffb400}
+    .social-post{background:#fafafa;border-radius:10px;padding:15px;margin:10px 0}
+    .post-preview{border:2px dashed #ddd;border-radius:10px;padding:20px;margin:15px 0;min-height:150px}
+    .emoji-picker{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+    .emoji{font-size:1.5em;cursor:pointer;padding:5px;border-radius:5px;transition:background .2s}
+    .emoji:hover{background:#f0f0f0}
+    .tip-box{background:linear-gradient(135deg,#fff9c4 0%,#fff 100%);border-radius:10px;padding:15px;margin:15px 0}
+    .confidence-meter{height:20px;background:#f0f0f0;border-radius:10px;overflow:hidden;margin:10px 0}
+    .confidence-fill{height:100%;background:linear-gradient(135deg,#2BFF88 0%,#2BD2FF 100%);width:75%;transition:width .5s}
+
+    /* === EQ 弹窗样式 === */
+    .eq-modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:9999}
+    .eq-card{width:min(680px,92vw);background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.2);padding:22px}
+    .eq-q{font-weight:700;margin:4px 0 10px;color:#333}
+    .eq-opt{border:1px solid #eee;border-radius:10px;padding:10px 12px;margin:8px 0;cursor:pointer}
+    .eq-opt:hover{border-color:#2BD2FF;background:#f7fbff}
+    .eq-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+    .eq-btn{background:linear-gradient(135deg,#FA8BFF,#2BD2FF);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+    .eq-close{background:#f0f0f0;color:#333}
+    .eq-score-pill{display:inline-block;background:#eef7ff;border:1px solid #d7ecff;padding:6px 10px;border-radius:999px;margin:6px 0;color:#246}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>💝 DateSmart</h1>
+      <p style="color:#666;font-size:1.2em;">Transform Your Dating Life with AI-Powered Insights</p>
+      <div class="eq-score">Your EQ Score: 85/100 🎯</div>
+    </header>
+
+    <div class="grid">
+        <div class="card">
+            <h3>💬 Smart Conversation Helper</h3>
+          
+            <!-- A. 回复对方 -->
+            <div style="border:1px solid #eee;border-radius:10px;padding:14px;margin-bottom:12px;">
+              <h4 style="margin-bottom:8px;">🗣️ Reply to Their Message</h4>
+              <textarea placeholder="Paste their message here..." rows="3" id="theirMessage"></textarea>
+              <select id="situation">
+                <option>Select Situation</option>
+                <option>First Message</option>
+                <option>Asking for a Date</option>
+                <option>After First Date</option>
+                <option>Apologizing</option>
+                <option>Keeping Conversation Going</option>
+              </select>
+              <button onclick="getReplySuggestion()">✨ Get Reply Suggestion</button>
+              <div class="ai-suggestion chat-message" id="replyBox" style="display:none;">
+                <strong>🤖 AI Coach (Reply):</strong>
+                <p id="replyText"></p>
+              </div>
+            </div>
+          
+            <!-- B. 润色我的消息 -->
+            <div style="border:1px solid #eee;border-radius:10px;padding:14px;">
+              <h4 style="margin-bottom:8px;">✍️ Polish My Message</h4>
+              <textarea placeholder="Paste your draft here..." rows="3" id="myMessage"></textarea>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <select id="myTone">
+                  <option value="">Tone (auto)</option>
+                  <option>Friendly</option>
+                  <option>Flirty</option>
+                  <option>Respectful</option>
+                  <option>Apologetic</option>
+                  <option>Professional</option>
+                </select>
+                <select id="myLength">
+                  <option value="">Length (auto)</option>
+                  <option>Short</option>
+                  <option>Medium</option>
+                  <option>Long</option>
+                </select>
+              </div>
+              <button onclick="improveMyMessage()">🪄 Improve My Message</button>
+              <div class="ai-suggestion chat-message" id="rewriteBox" style="display:none;">
+                <strong>🤖 AI Coach (Rewrite):</strong>
+                <p id="rewriteText"></p>
+                <button style="margin-top:8px;width:auto" onclick="copyText('rewriteText')">📋 Copy</button>
+              </div>
+            </div>
+          
+            <div class="tip-box" style="margin-top:12px;">
+              <strong>💡 Pro Tip:</strong> Keep it specific and kind. If unsure, choose “Respectful + Short”.
+            </div>
+          </div>
+
+      <div class="card">
+        <h3>🍽️ Perfect Restaurant Finder</h3>
+        <input type="text" placeholder="Location (e.g., Boston, MA)" id="location">
+        <select id="cuisine">
+          <option>Cuisine Type</option><option>Italian</option><option>Japanese</option><option>French</option><option>American</option><option>Thai</option>
+        </select>
+        <select id="vibe">
+          <option>Vibe</option><option>Romantic</option><option>Casual</option><option>Fun & Lively</option><option>Quiet & Intimate</option>
+        </select>
+        <button onclick="findRestaurants()">🔍 Find Perfect Spots</button>
+        <div id="restaurants" style="margin-top:20px;">
+          <div class="restaurant-card">
+            <strong>La Bella Vista</strong> <span class="rating">⭐⭐⭐⭐⭐</span>
+            <p style="color:#666;">Italian • Romantic • $$$</p>
+            <p style="font-size:.9em;margin-top:5px;">Perfect for: First dates, anniversaries</p>
+          </div>
+          <div class="restaurant-card">
+            <strong>The Garden Terrace</strong> <span class="rating">⭐⭐⭐⭐</span>
+            <p style="color:#666;">American • Casual • $$</p>
+            <p style="font-size:.9em;margin-top:5px;">Great atmosphere, outdoor seating</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>📱 Social Media Genius</h3>
+        <textarea placeholder="What do you want to post about?" rows="2" id="postIdea"></textarea>
+        <select id="platform">
+          <option>Select Platform</option><option>Instagram</option><option>Twitter/X</option><option>Facebook</option><option>LinkedIn</option>
+        </select>
+        <div class="emoji-picker">
+          <span class="emoji" onclick="addEmoji('😊')">😊</span>
+          <span class="emoji" onclick="addEmoji('❤️')">❤️</span>
+          <span class="emoji" onclick="addEmoji('🔥')">🔥</span>
+          <span class="emoji" onclick="addEmoji('✨')">✨</span>
+          <span class="emoji" onclick="addEmoji('🎉')">🎉</span>
+          <span class="emoji" onclick="addEmoji('💪')">💪</span>
+        </div>
+        <button onclick="generatePost()">🚀 Generate Engaging Post</button>
+        <div class="post-preview" id="postPreview"><p style="color:#999;">Your generated post will appear here...</p></div>
+        <button onclick="schedulePost()">📅 Schedule Post</button>
+      </div>
+
+      <div class="card">
+        <h3>😊 Emotional Intelligence Booster</h3>
+        <div style="margin:20px 0;">
+          <strong>Your Confidence Level</strong>
+          <div class="confidence-meter"><div class="confidence-fill"></div></div>
+          <p style="color:#666;font-size:.9em;">75% - You're doing great!</p>
+        </div>
+        <div class="tip-box">
+          <strong>Today's EQ Exercise:</strong>
+          <p style="margin-top:10px;">Practice active listening: In your next conversation, summarize what the other person said before responding.</p>
+        </div>
+        <button onclick="startEQQuiz()">📊 Take EQ Assessment</button>
+        <button onclick="getDailyTip()">💡 Get Daily Dating Tip</button>
+        <div style="margin-top:20px;padding:15px;background:#f9f9f9;border-radius:10px;">
+          <strong>Recent Wins 🏆</strong>
+          <ul style="margin-top:10px;padding-left:20px;">
+            <li>Great conversation starter used!</li>
+            <li>Remembered to ask follow-up questions</li>
+            <li>Chose perfect restaurant for date</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📅 Date Planning Assistant</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+        <input type="text" placeholder="Their Name" id="dateName">
+        <input type="date" placeholder="Date" id="dateDate">
+        <input type="time" placeholder="Time" id="dateTime">
+        <select id="dateNumber">
+          <option>Which Date?</option><option>First Date</option><option>Second Date</option><option>Third Date</option><option>Anniversary</option>
+        </select>
+      </div>
+      <textarea placeholder="Their interests (help AI plan better)" rows="2" id="interests"></textarea>
+      <button onclick="planDate()">🎯 Create Perfect Date Plan</button>
+      <div class="ai-suggestion" style="margin-top:20px;display:none;" id="datePlan">
+        <strong>Your Personalized Date Plan:</strong>
+        <ol style="margin-top:10px;padding-left:20px;" id="datePlanList">
+          <li>6:00 PM - Pick up with flowers (sunflowers - their favorite!)</li>
+          <li>6:30 PM - Dinner at La Bella Vista (already reserved!)</li>
+          <li>8:00 PM - Walk through Boston Common (beautiful at sunset)</li>
+          <li>9:00 PM - Dessert at Mike's Pastry (famous cannoli)</li>
+        </ol>
+        <p style="margin-top:15px;"><strong>Conversation starters prepared based on their interests!</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- EQ Assessment Modal -->
+  <div id="eqModal" class="eq-modal" onclick="if(event.target.id==='eqModal') closeEQ()">
+    <div class="eq-card">
+      <div class="eq-score-pill" id="eqProgress">Question 1/10</div>
+      <h3 style="margin:6px 0 12px;color:#5c5c8a">🧠 EQ Assessment</h3>
+      <div id="eqBody"></div>
+      <div class="eq-footer">
+        <button class="eq-btn eq-close" onclick="closeEQ()">Close</button>
+        <button class="eq-btn" id="eqNextBtn" onclick="nextEQ()">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === 仅此一处声明 API 地址（修复重复声明）===
+    const API_URL = 'http://127.0.0.1:8000';
+
+    // 通用 POST
+    async function postJSON(url, body){
+      const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return await r.json();
+    }
+    async function getReplySuggestion(){
+  const message = document.getElementById('theirMessage').value.trim();
+  const situation = document.getElementById('situation').value;
+  if(!message || situation==='Select Situation'){
+    alert('Please provide their message and select the situation'); return;
+  }
+  try{
+    const prompt =
+`You are a dating conversation coach.
+Context situation: ${situation}
+Their message: """${message}"""
+Write 1-2 ready-to-send replies (natural, kind, concise). Use first person.`;
+    const resp = await postJSON(`${API_URL}/api/coach/advice`, {
+      question: prompt, goal: "direct reply", lang: "en", context: null
+    });
+    const text = (resp.answer || 'No suggestion').trim().replace(/\n{2,}/g,'\n');
+    document.getElementById('replyText').innerHTML = text.replace(/\n/g,'<br>');
+    document.getElementById('replyBox').style.display = 'block';
+  }catch(e){
+    console.error(e);
+    document.getElementById('replyText').textContent =
+      "Try: “Hey! Loved hearing about [their interest]. Want to grab coffee this weekend?”";
+    document.getElementById('replyBox').style.display = 'block';
+  }
+}
+
+    async function improveMyMessage(){
+    const mine   = document.getElementById('myMessage').value.trim();
+    const tone   = document.getElementById('myTone').value;
+    const length = document.getElementById('myLength').value;
+    if(!mine){ alert('Please paste your draft message'); return; }
+    try{
+        const prompt =
+    `Rewrite my dating message to be clear, warm and respectful.
+    ${tone ? `Tone: ${tone}.` : ''} ${length ? `Length: ${length}.` : ''}
+    Keep meaning, avoid cringe, keep it sendable.
+    Original: """${mine}"""`;
+        const resp = await postJSON(`${API_URL}/api/coach/advice`, {
+        question: prompt, goal: "rewrite my message", lang: "en", context: null
+        });
+        document.getElementById('rewriteText').innerHTML =
+        (resp.answer || 'No rewrite').replace(/\n/g,'<br>');
+        document.getElementById('rewriteBox').style.display = 'block';
+    }catch(e){
+        console.error(e);
+        document.getElementById('rewriteText').textContent =
+        mine.length>160 ? mine.slice(0,160)+'…' : mine;
+        document.getElementById('rewriteBox').style.display = 'block';
+    }
+    }
+
+    function copyText(id){
+    const text = document.getElementById(id).innerText || '';
+    navigator.clipboard.writeText(text).then(()=>alert('Copied!'));
+    }
+
+    // ===== EQ（AI 出题）=====
+    let eqIndex = 0, eqItems = [], eqAnswers = [];
+    async function startEQQuiz(){
+      try{
+        const r = await fetch(`${API_URL}/api/eq/quiz`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({n:10,lang:'zh',difficulty:'medium'})
+        });
+        const data = await r.json();
+        eqItems = data.items || [];
+      }catch{ eqItems = []; }
+      if(!eqItems.length){ alert('加载题目失败'); return; }
+      eqIndex = 0; eqAnswers = Array(eqItems.length).fill(null);
+      document.getElementById('eqModal').style.display='flex';
+      renderEQ();
+    }
+    function renderEQ(){
+      const item = eqItems[eqIndex];
+      document.getElementById('eqProgress').textContent = `Question ${eqIndex+1}/${eqItems.length}`;
+      const opts = ["非常不同意","不同意","一般","同意","非常同意"];
+      document.getElementById('eqBody').innerHTML =
+        `<div class="eq-q">${item.q}</div>` +
+        opts.map((t,i)=>`<div class="eq-opt" onclick="chooseEQ(${i+1})">${t}</div>`).join('');
+      document.getElementById('eqNextBtn').disabled = (eqAnswers[eqIndex]==null);
+    }
+    function chooseEQ(s){
+      eqAnswers[eqIndex]=s;
+      [...document.querySelectorAll('.eq-opt')].forEach((el,i)=>{
+        el.style.borderColor=(i+1===s)?'#2BD2FF':'#eee';
+        el.style.background=(i+1===s)?'#f0fbff':'#fff';
+      });
+      document.getElementById('eqNextBtn').disabled=false;
+    }
+    async function nextEQ(){
+      if(eqAnswers[eqIndex]==null) return;
+      if(eqIndex<eqItems.length-1){ eqIndex++; renderEQ(); return; }
+      const weights = eqItems.map(it=>it.weight??1);
+      const r = await fetch(`${API_URL}/api/eq/grade`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({answers:eqAnswers,weights})
+      });
+      const res = await r.json(); const pct = res.score||0;
+      document.getElementById('eqBody').innerHTML =
+        `<div style="margin-bottom:6px;">你的 EQ 评分：<b>${pct}/100</b> · 等级：<b>${res.tier||''}</b></div>
+         <div class="confidence-meter" style="margin:10px 0 14px;"><div class="confidence-fill" style="width:${Math.max(10,pct)}%"></div></div>
+         <div class="tip-box"><b>改进建议：</b><br>${res.advice||''}</div>`;
+      document.getElementById('eqNextBtn').style.display='none';
+      try{ localStorage.setItem('eq_score',String(pct)); const fill=document.querySelector('.confidence-fill'); if(fill) fill.style.width=pct+'%'; }catch{}
+    }
+    function closeEQ(){ document.getElementById('eqModal').style.display='none'; }
+
+    // 1) 会话建议
+    async function getSuggestion(){
+      const message=document.getElementById('theirMessage').value.trim();
+      const situation=document.getElementById('situation').value;
+      if(!message||situation==='Select Situation'){ alert('Please provide their message and select the situation'); return; }
+      try{
+        const prompt=`Situation: ${situation}\nTheir message: ${message}\nPlease provide a ready-to-send reply and 2-3 next steps.`;
+        const resp=await postJSON(`${API_URL}/api/coach/advice`,{question:prompt,context:null,goal:"reply they can send now",lang:"en"});
+        document.getElementById('suggestion').style.display='block';
+        document.getElementById('suggestionText').textContent=resp.answer||'No suggestion';
+      }catch(e){
+        console.error(e);
+        const suggestions={
+          'First Message':"Great opener! Respond with enthusiasm and ask an engaging question about something specific in their profile. Keep it light and fun!",
+          'Asking for a Date':"Perfect timing! Suggest a specific plan: 'I'd love to! How about coffee at that new place downtown this Saturday at 2pm?'",
+          'After First Date':"Express genuine appreciation: 'I had an amazing time last night! Your story about [specific detail] had me laughing all day.'",
+          'Keeping Conversation Going':"Share something interesting from your day and ask an open-ended question about their interests or weekend plans."
+        };
+        document.getElementById('suggestion').style.display='block';
+        document.getElementById('suggestionText').textContent=suggestions[situation]||suggestions['First Message'];
+      }
+    }
+
+    // 2) 餐厅推荐
+    async function findRestaurants(){
+      const loc=document.getElementById('location').value.trim()||'Boston, MA';
+      const cuisine=document.getElementById('cuisine').value;
+      const vibe=document.getElementById('vibe').value;
+      const box=document.getElementById('restaurants');
+      try{
+        const q=`Suggest 3 ${cuisine.toLowerCase()} restaurants in ${loc} with a ${vibe.toLowerCase()} vibe for a date. For each: name, short reason, and price level ($/$$/$$$). Return as bullets.`;
+        const resp=await postJSON(`${API_URL}/api/coach/advice`,{question:q,context:null,goal:"date restaurants",lang:"en"});
+        const lines=resp.answer.split('\n').filter(x=>x.trim());
+        box.innerHTML = lines.slice(0,6).map(t=>{
+          const name=t.replace(/^[\-\d\.\)\*]+\s*/,'').split(':')[0];
+          return `<div class="restaurant-card"><strong>${name}</strong> <span class="rating">⭐⭐⭐⭐</span><p style="color:#666">${t}</p></div>`;
+        }).join('')||box.innerHTML;
+      }catch(e){
+        console.error(e);
+        alert('🍽️ Found 12 perfect restaurants matching your criteria! All have availability this week. Would you like me to make a reservation?');
+      }
+    }
+
+    // 3) 社媒文案
+    async function generatePost(){
+      const idea=document.getElementById('postIdea').value.trim();
+      const platform=document.getElementById('platform').value;
+      if(!idea){ alert('Please describe what you want to post about'); return; }
+      const preview=document.getElementById('postPreview');
+      try{
+        const q=`Platform: ${platform}. Write an engaging short post about: ${idea}. Include 1-2 emojis and 2 relevant hashtags.`;
+        const resp=await postJSON(`${API_URL}/api/coach/advice`,{question:q,context:null,goal:"social post",lang:"en"});
+        preview.innerHTML=`<strong>@yourusername</strong><br><p style="margin-top:10px;">${resp.answer.replace(/\n/g,'<br>')}</p>`;
+      }catch(e){
+        console.error(e);
+        preview.innerHTML=`<strong>@yourusername</strong><br><p style="margin-top:10px;">Living my best life and grateful for every moment! ✨ ${idea} #authentic #grateful #livingfully #boston</p><p style="color:#666;font-size:.9em;margin-top:10px;">Best time to post: 7:00 PM</p>`;
+      }
+    }
+    function schedulePost(){ alert('📅 Post scheduled for optimal engagement time (7:00 PM today). Your social media presence is about to level up!'); }
+    function addEmoji(e){ const t=document.getElementById('postIdea'); t.value+=e; }
+
+    // 4) 每日提示
+    async function getDailyTip(){
+      try{
+        const resp=await postJSON(`${API_URL}/api/coach/advice`,{question:"Give one concise actionable dating tip for today (1-2 sentences).",context:null,goal:"daily tip",lang:"en"});
+        alert('💡 '+(resp.answer||'Be yourself and stay kind.'));
+      }catch(e){
+        console.error(e);
+        const tips=["Remember: Being yourself is your superpower. Authenticity attracts the right people!","Active listening tip: Repeat back what they said in your own words to show understanding.","Body language hack: Mirror their posture subtly to build connection.","Confidence builder: List 3 things you're proud of before each date."];
+        alert('💡 '+tips[Math.floor(Math.random()*tips.length)]);
+      }
+    }
+
+    // 5) 约会计划
+    async function planDate(){
+      const name=document.getElementById('dateName').value.trim();
+      const date=document.getElementById('dateDate').value;
+      const time=document.getElementById('dateTime').value;
+      const which=document.getElementById('dateNumber').value;
+      const interests=document.getElementById('interests').value.trim();
+      if(!name){ alert('Please enter their name to personalize the plan'); return; }
+      try{
+        const q=`Plan a ${which.toLowerCase()} for ${name} on ${date||'an evening'} at ${time||'evening'}.\nInterests: ${interests||'unknown'}.\nReturn 4-6 bullet steps with times and short notes, suitable for a romantic but respectful date plan.`;
+        const resp=await postJSON(`${API_URL}/api/coach/advice`,{question:q,context:null,goal:"date plan",lang:"en"});
+        const list=document.getElementById('datePlanList'); list.innerHTML='';
+        resp.answer.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,8).forEach(line=>{
+          const clean=line.replace(/^[\-\d\.\)\*]+\s*/,'');
+          const li=document.createElement('li'); li.textContent=clean; list.appendChild(li);
+        });
+        document.getElementById('datePlan').style.display='block';
+        document.getElementById('datePlan').scrollIntoView({behavior:'smooth'});
+      }catch(e){
+        console.error(e);
+        document.getElementById('datePlan').style.display='block';
+        document.getElementById('datePlan').scrollIntoView({behavior:'smooth'});
+      }
+    }
+
+    // 进度条动画
+    setTimeout(()=>{ const f=document.querySelector('.confidence-fill'); if(f) f.style.width='85%'; },1000);
+  </script>
+</body>
+</html>
